@@ -1,0 +1,57 @@
+
+#acces token
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzcwOTY5NTY3LCJpYXQiOjE3Njk2NzM1NjcsImp0aSI6IjRiZTE2ZGY0YzY5YTRiNDk5ZDdmNjFlNzExMDgwYTQ1IiwidXNlcl9pZCI6IjIifQ.Anf0lzjhI_6DicQs4dVufHjDaXOY4U0cn6ZZ5XzDaPg
+
+
+#homework
+apilarni chiqarish
+1. region (get qilish ochiq)✅
+2. district✅
+3. user apisi (get qilish mumkin emas)✅
+4. category✅
+5. product✅
+6. user modelidan username olib tashash kerak ✅
+7. smsga kod yuborish (django background task orqali) ✅
+8. changepassword ✅
+9. api/v1/register paytida (first_name user-261823) ✅
+phone
+code
+random string (6) password ga biriktiriladi (userga sms yuboradi)
+10. profiledagi malumotlarni ozgartirish ✅
+
+
+11. address apilarini chiqarish (default address ni belgilab ketish)
+12. favorite va cart apilarini chiqarish
+12.1 cart api
+    - api/v1/users/cart
+    product (slug, image, seller name, name, price, discount price, quantity)
+
+    - api/v1/users/cart/{pk}/update
+    - api/v1/users/cart/{pk}/delete
+    - api/v1/users/cart/{pk}/add
+
+filter larni qoshish
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
