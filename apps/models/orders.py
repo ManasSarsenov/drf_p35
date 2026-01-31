@@ -1,4 +1,4 @@
-from django.db.models import ForeignKey, CASCADE
+from django.db.models import ForeignKey, CASCADE, OneToOneField
 from django.db.models.enums import TextChoices
 from django.db.models.fields import CharField, IntegerField
 
@@ -12,7 +12,7 @@ class Favorite(CreatedBaseModel):
 
 
 class Cart(CreatedBaseModel):
-    user = ForeignKey('apps.User', CASCADE, related_name='carts')
+    user = OneToOneField('apps.User', CASCADE)
 
 
 class CartItem(CreatedBaseModel):

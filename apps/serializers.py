@@ -1,4 +1,5 @@
 from django.contrib.auth.hashers import make_password
+from django.db.models import F
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from django.core.cache import cache
@@ -10,9 +11,31 @@ from rest_framework.serializers import ModelSerializer, Serializer
 from rest_framework_simplejwt.serializers import TokenObtainSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.models import Region, District, Category, Product, User, Order, Seller, ProductImage, CartItem
+from apps.models import Region, District, Category, Product, User, Order, Seller, ProductImage, CartItem, Favorite, \
+    Address
 from apps.models.utils import uz_phone_validator
 from apps.tasks import register_key, send_sms_code, generate_random_password
+
+
+class DynamicFieldsModelSerializer(ModelSerializer):
+    """
+    A ModelSerializer that takes an additional `fields` argument that
+    controls which fields should be displayed.
+    """
+
+    def __init__(self, *args, **kwargs):
+        # Don't pass the 'fields' arg up to the superclass
+        fields = kwargs.pop('fields', None)
+
+        # Instantiate the superclass normally
+        super().__init__(*args, **kwargs)
+
+        if fields is not None:
+            # Drop any fields that are not specified in the `fields` argument.
+            allowed = set(fields)
+            existing = set(self.fields)
+            for field_name in existing - allowed:
+                self.fields.pop(field_name)
 
 
 class RegionModelSerializer(ModelSerializer):
@@ -85,34 +108,6 @@ class UserRegisterModelSerializer(ModelSerializer):
         return repr
 
 
-#
-#
-# class RegisterModelSerializer(ModelSerializer):
-#     password = CharField(max_length=255, write_only=True)
-#     confirm_password = CharField(max_length=255, write_only=True)
-#
-#     class Meta:
-#         model = User
-#         fields = ['id', 'username', 'phone', 'password', 'confirm_password']
-#
-#     def validate_username(self, value: str):
-#         if not value.isalpha():
-#             raise ValidationError('Invalid username!')
-#         return value
-#
-#     def validate_phone(self, value: str):
-#         if not value.startswith('+') or len(value) != 13:
-#             raise ValidationError('Invalid phone!')
-#         return value
-#
-#     def validate(self, data):
-#         password = data.get('password')
-#         confirm_password = data.pop('confirm_password', None)
-#         if password != confirm_password:
-#             raise ValidationError('Passwords do not match!')
-#         data['password'] = make_password(password)
-#         return data
-
 class CategoryModelSerializer(ModelSerializer):
     class Meta:
         model = Category
@@ -122,6 +117,13 @@ class CategoryModelSerializer(ModelSerializer):
         # extra_kwargs = {
         #     'address': {'write_only': True}
         # }
+
+
+class AddressModelSerializer(ModelSerializer):
+    class Meta:
+        model = Address
+        fields = "__all__"
+        read_only_fields = ["user"]
 
 
 class SellerModelSerializer(ModelSerializer):
@@ -147,41 +149,33 @@ class CustomTokenObtainPairSerializer(TokenObtainSerializer):
         return data
 
 
-class ProductListModelSerializer(ModelSerializer):
+class ProductImageSerializer(ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = ['id', 'image']
+
+
+class ProductImageCreateSerializer(ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = ['product', 'image']
+
+
+class ProductListModelSerializer(DynamicFieldsModelSerializer):
+    images = ProductImageSerializer(many=True, read_only=True)
+
     class Meta:
         model = Product
-        fields = ['id', 'name', 'price', 'discount', ]
+        fields = ['id', 'name', 'price', 'discount', 'category', 'images']
 
 
-#
-#
 class ProductCreateModelSerializer(ModelSerializer):
+    images = ProductImageSerializer(many=True, read_only=True)
+
     class Meta:
         model = Product
-        fields = ['id', 'name', 'price', 'discount', 'category']
+        fields = ['id', 'name', 'price', 'discount', 'category', 'images']
 
-
-# class ChangePasswordSerializer(Serializer):
-#     old_password = CharField(required=True)
-#     new_password = CharField(required=True, min_length=6)
-#     confirm_password = CharField(required=True, min_length=6)
-#
-#     def validate_old_password(self, value):
-#         user = self.context['request'].user
-#         if not user.check_password(value):
-#             raise serializers.ValidationError('Eski parol natogri')
-#         return value
-#
-#     def validate(self, attrs):
-#         if attrs['new_password'] != attrs['confirm_password']:
-#             raise serializers.ValidationError('{"confirm_password":"Parollar mos emas"}')
-#         return attrs
-#
-#     def save(self, **kwargs):
-#         user = self.context['request'].user
-#         user.set_password(self.validated_data['new_password'])
-#         user.save()
-#         return user
 
 class UserChangePasswordModelSerializer(ModelSerializer):
     old_password = CharField(max_length=255)
@@ -215,45 +209,64 @@ class UserChangePasswordModelSerializer(ModelSerializer):
         return super().create(validated_data)
 
 
-class ProductImageModelSerializer(ModelSerializer):
-    class Meta:
-        model = ProductImage
-        fields = ['image']
-
-
-class ProductModelSerializer(ModelSerializer):
-    images = ProductImageModelSerializer(source='products', many=True, read_only=True)
-    seller_name = CharField(source='seller.name', read_only=True)
-    discount_price = SerializerMethodField()
-
-    class Meta:
-        model = Product
-        fields = ['slug', 'images', 'seller_name', 'name', 'price', 'discount_price']
-
-    @extend_schema_field(FloatField)
-    def get_discount_price(self, obj):
-        return obj.price - (obj.price * obj.discount // 100)
-
-
 class CartItemModelSerializer(ModelSerializer):
-    product = ProductModelSerializer(read_only=True)
-    quantity = IntegerField(min_value=1)
-
     class Meta:
         model = CartItem
-        fields = ['id', 'product', 'quantity']
+        fields = 'id', 'product', 'quantity'
+        extra_kwargs = {
+            'quantity': {'read_only': True},
+            'product': {'write_only': True}
+        }
+
+    def create(self, validated_data):
+        obj, updated = CartItem.objects.update_or_create(
+            defaults={'quantity': F('quantity') + 1},
+            create_defaults={'quantity': 1},
+            **validated_data
+        )
+        return obj
+
+        # cart_item, created = self.Meta.model.objects.get_or_create(**validated_data)
+        # if created:
+        #     return cart_item
+        # cart_item.quantity = F('quantity') + 1
+        # cart_item.save(update_fields=['quantity'])
+        # return cart_item
+
+    def to_representation(self, instance: CartItem):
+        repr_ = super().to_representation(instance)
+        user = self.context['request'].user
+
+        repr_.update(
+            **ProductListModelSerializer(instance.product,
+                                         fields=['name', 'slug', 'price', 'discount', 'first_image']).data)
+        repr_['seller_name'] = instance.product.seller.name
+        repr_['is_favorite'] = Favorite.objects.filter(user=user, product=instance.product).exists()
+
+        # slug, name, price, discount, image, seller_name, quantity
+        return repr_
 
 
-class CartItemAddSerializer(serializers.Serializer):
-    product_id = serializers.IntegerField()
-    quantity = serializers.IntegerField(default=1, min_value=1)
+class FavoriteModelSerializer(DynamicFieldsModelSerializer):
+    user = HiddenField(default=CurrentUserDefault())
 
-    def validate_product_id(self, value):
-        if not Product.objects.filter(id=value).exists():
-            raise serializers.ValidationError("Product not found")
-        return value
+    class Meta:
+        model = Favorite
+        fields = 'id', 'user'
 
-#
+    def to_representation(self, instance: Favorite):
+        repr_ = super().to_representation(instance)
+        repr_.update(
+            **ProductListModelSerializer(instance.product,
+                                         fields=['name', 'slug', 'price', 'discount', 'first_image']).data)
+        cart_item = CartItem.objects.filter(cart__user=instance.user, product=instance.product).only('quantity').first()
+        if cart_item:
+            repr_['quantity'] = cart_item.quantity
+        else:
+            repr_['quantity'] = 0
+
+        return repr_
+
 # class UserModelSerializer(ModelSerializer):
 #     class Meta:
 #         model = User

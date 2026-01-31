@@ -31,6 +31,9 @@ class Product(SlugBaseModel, CreatedBaseModel):
     seller = ForeignKey('apps.Seller', CASCADE, limit_choices_to={'type': 'seller'}, related_name='products')
     category = ForeignKey('apps.Category', CASCADE, related_name='products')
 
+    def __str__(self):
+        return self.name
+
 
 class ProductImage(ImageBaseModel):
-    product = ForeignKey('apps.Product', CASCADE, related_name='products')
+    product = ForeignKey('apps.Product', CASCADE, related_name='images')

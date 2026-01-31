@@ -21,8 +21,8 @@ random string (6) password ga biriktiriladi (userga sms yuboradi)
 
 
 11. address apilarini chiqarish (default address ni belgilab ketish)
-12. favorite va cart apilarini chiqarish
-12.1 cart api
+12. favorite va cart apilarini chiqarish ✅
+12.1 cart api ✅
     - api/v1/users/cart
     product (slug, image, seller name, name, price, discount price, quantity)
 

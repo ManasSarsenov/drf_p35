@@ -79,7 +79,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'root.wsgi.application'
 AUTH_USER_MODEL = 'apps.User'
 
-
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
@@ -161,7 +160,6 @@ CACHES = {
         "LOCATION": "redis://127.0.0.1:6379",
     }
 }
-
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'DRF p35 project',
