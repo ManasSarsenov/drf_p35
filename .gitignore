@@ -9,7 +9,6 @@
 [Ll]ocal
 [Ss]cripts
 pyvenv.cfg
-.idea/
 .venv
 pip-selfcheck.json
 ### JetBrains template
@@ -18,6 +17,8 @@ pip-selfcheck.json
 # User-specific
 
 .idea/**/workspace.xml
+.idea
+media
 .idea/**/tasks.xml
 .idea/**/usage.statistics.xml
 .idea/**/dictionaries
