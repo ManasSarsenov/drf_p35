@@ -2,7 +2,11 @@
 #acces token
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzcwOTY5NTY3LCJpYXQiOjE3Njk2NzM1NjcsImp0aSI6IjRiZTE2ZGY0YzY5YTRiNDk5ZDdmNjFlNzExMDgwYTQ1IiwidXNlcl9pZCI6IjIifQ.Anf0lzjhI_6DicQs4dVufHjDaXOY4U0cn6ZZ5XzDaPg
 
+docker exec -it postgres_name sh
+su postgres
+psql
 
+create database db_name;
 #homework
 apilarni chiqarish
 1. region (get qilish ochiq)✅
@@ -54,4 +58,4 @@ filter larni qoshish
 
 
 
-
+ docker compose exec -it backend_service uv run python3 manage.py collectstatic --noinput

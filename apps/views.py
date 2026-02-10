@@ -58,7 +58,7 @@ class UserCheckPhoneAPIView(APIView):
     def get(self, request, phone):
         is_exists = User.objects.filter(phone=phone).exists()
         if not is_exists:
-            register_sms.enqueue(phone)
+            register_sms.delay(phone)
 
         return Response({'data': {'is_exists': is_exists}})
 
@@ -239,6 +239,7 @@ class CategoryRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
     serializer_class = CategoryModelSerializer
 
 
+@extend_schema(tags=['products'])
 class ProductImageCreateAPIView(CreateAPIView):
     queryset = ProductImage.objects.all()
     serializer_class = ProductImageCreateSerializer

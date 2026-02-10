@@ -1,0 +1,82 @@
+services:
+  backend_service:
+    build: .
+    command: >
+      uv run gunicorn root.wsgi:application --bind 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.prod
+    volumes:
+      - backend_static:/app/static
+      - backend_static:/app/media
+    depends_on:
+      - postgres_service
+      - redis_service
+    restart: on-failure
+
+  postgres_service:
+    image: postgres:alpine
+    env_file: .env.prod
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql
+
+  redis_service:
+    image: redis:alpine
+    env_file: .env.prod
+    ports:
+      - "6379:6379"
+
+  celery_service:
+    build: .
+    command: >
+      uv run celery -A root worker -l info
+    env_file:
+      - .env.prod
+    volumes:
+      - backend_static:/app/static
+      - backend_media:/app/media
+    depends_on:
+      - postgres_service
+      - redis_service
+
+  celery_flower_service:
+    build: .
+    command: >
+      uv run celery -A root.celery flower --port=5001
+    env_file:
+      - .env.prod
+    ports:
+      - "5001:5001"
+    volumes:
+      - backend_static:/app/static
+      - backend_media:/app/media
+    depends_on:
+      - postgres_service
+      - redis_service
+
+  celery_beat_service:
+    build: .
+    command: >
+      uv run celery -A root beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+    env_file:
+      - .env.prod
+    volumes:
+      - backend_static:/app/static
+      - backend_media:/app/media
+    depends_on:
+      - postgres_service
+      - redis_service
+
+
+volumes:
+  pg_data:
+  backend_static:
+  backend_media:
+
+
+
+

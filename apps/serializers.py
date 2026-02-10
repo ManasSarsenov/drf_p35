@@ -93,7 +93,7 @@ class UserRegisterModelSerializer(ModelSerializer):
         password = generate_random_password()
         validated_data['password'] = make_password(password)
         text = f"Bu sizning parolingiz {password}"
-        send_sms_code.enqueue(phone, text)
+        send_sms_code.delay(phone, text)
         self.user = super().create(validated_data)
         self.user.first_name = f'user-{self.user.id}'
         self.user.save(update_fields=['first_name'])
