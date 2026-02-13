@@ -3,74 +3,134 @@ services:
     build: .
     command: >
       uv run gunicorn root.wsgi:application --bind 0.0.0.0:8000
-    ports:
-      - "8000:8000"
+    #    ports:
+    #      - "8000:8000"
     env_file:
       - .env.prod
     volumes:
       - backend_static:/app/static
-      - backend_static:/app/media
+      - backend_media:/app/media
     depends_on:
-      - postgres_service
-      - redis_service
+      postgres_service:
+        condition: service_healthy
+      redis_service:
+        condition: service_healthy
     restart: on-failure
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
   postgres_service:
     image: postgres:alpine
     env_file: .env.prod
-    ports:
-      - "5432:5432"
+    #    ports:
+    #      - "5432:5432"
     volumes:
       - pg_data:/var/lib/postgresql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   redis_service:
     image: redis:alpine
     env_file: .env.prod
-    ports:
-      - "6379:6379"
+    #    ports:
+    #      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
 
   celery_service:
     build: .
     command: >
       uv run celery -A root worker -l info
-    env_file:
-      - .env.prod
+    env_file: .env.prod
     volumes:
       - backend_static:/app/static
       - backend_media:/app/media
     depends_on:
-      - postgres_service
-      - redis_service
+      postgres_service:
+        condition: service_healthy
+      redis_service:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "celery -A root inspect ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
   celery_flower_service:
     build: .
     command: >
-      uv run celery -A root.celery flower --port=5001
-    env_file:
-      - .env.prod
-    ports:
-      - "5001:5001"
+      uv run celery -A root.celery flower --port=5001 --url_prefix=flower
+    env_file: .env.prod
+    #    ports:
+    #      - "5001:5001"
     volumes:
       - backend_static:/app/static
       - backend_media:/app/media
     depends_on:
-      - postgres_service
-      - redis_service
+      postgres_service:
+        condition: service_healthy
+      redis_service:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5001/flower/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
   celery_beat_service:
     build: .
     command: >
       uv run celery -A root beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
 
-    env_file:
-      - .env.prod
+    env_file: .env.prod
     volumes:
       - backend_static:/app/static
       - backend_media:/app/media
     depends_on:
-      - postgres_service
-      - redis_service
+      postgres_service:
+        condition: service_healthy
+      redis_service:
+        condition: service_healthy
+    restart: on-failure
+    healthcheck:
+      test: [ "CMD-SHELL", "pgrep -f 'celery beat' || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
+  nginx_service:
+    image: nginx:alpine
+    ports:
+      - "8005:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - backend_static:/app/static
+      - backend_media:/app/media
+    depends_on:
+      backend_service:
+        condition: service_healthy
+    restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost/health/ || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
 
 volumes:
   pg_data:

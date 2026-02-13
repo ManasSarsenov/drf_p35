@@ -150,6 +150,8 @@ REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}"
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = 'django-db'
 
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
+
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",

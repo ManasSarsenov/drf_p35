@@ -13,12 +13,16 @@ dependencies = [
     "djangorestframework>=3.16.1",
     "djangorestframework-simplejwt>=5.5.1",
     "drf-spectacular>=0.29.0",
-    "flake8>=7.3.0",
     "flower>=2.0.1",
     "gunicorn>=25.0.1",
-    "isort>=7.0.0",
     "pillow>=12.1.0",
     "psycopg2-binary>=2.9.11",
-    "python-dotenv>=1.2.1",
     "redis>=7.1.0",
+]
+
+[dependency-groups]
+dev = [
+    "flake8>=7.3.0",
+    "isort>=7.0.0",
+    "python-dotenv>=1.2.1",
 ]

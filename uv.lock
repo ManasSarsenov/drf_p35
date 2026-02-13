@@ -263,14 +263,18 @@ dependencies = [
     { name = "djangorestframework" },
     { name = "djangorestframework-simplejwt" },
     { name = "drf-spectacular" },
-    { name = "flake8" },
     { name = "flower" },
     { name = "gunicorn" },
-    { name = "isort" },
     { name = "pillow" },
     { name = "psycopg2-binary" },
-    { name = "python-dotenv" },
     { name = "redis" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "flake8" },
+    { name = "isort" },
+    { name = "python-dotenv" },
 ]
 
 [package.metadata]
@@ -284,14 +288,18 @@ requires-dist = [
     { name = "djangorestframework", specifier = ">=3.16.1" },
     { name = "djangorestframework-simplejwt", specifier = ">=5.5.1" },
     { name = "drf-spectacular", specifier = ">=0.29.0" },
-    { name = "flake8", specifier = ">=7.3.0" },
     { name = "flower", specifier = ">=2.0.1" },
     { name = "gunicorn", specifier = ">=25.0.1" },
-    { name = "isort", specifier = ">=7.0.0" },
     { name = "pillow", specifier = ">=12.1.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.11" },
-    { name = "python-dotenv", specifier = ">=1.2.1" },
     { name = "redis", specifier = ">=7.1.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "flake8", specifier = ">=7.3.0" },
+    { name = "isort", specifier = ">=7.0.0" },
+    { name = "python-dotenv", specifier = ">=1.2.1" },
 ]
 
 [[package]]
