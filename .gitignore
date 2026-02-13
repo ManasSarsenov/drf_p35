@@ -500,4 +500,4 @@ cython_debug/
 #.idea/
 
 .env*
-!.env.example
+!.env.examplew
